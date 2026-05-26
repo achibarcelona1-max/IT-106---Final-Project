@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvenTrack — Inventory Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">📦</div>
+      <div>
+        <div class="login-logo-text">InvenTrack</div>
+      </div>
+    </div>
+    <div class="login-title">Sign in</div>
+    
+    <div class="login-err" id="loginErr"></div>
+    <div class="lf-group">
+      <label class="lf-label">Email</label>
+      <input class="lf-input" type="email" id="lEmail" placeholder="admin@yourdomain.com">
+    </div>
+    <div class="lf-group">
+      <label class="lf-label">Password</label>
+      <input class="lf-input" type="password" id="lPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<!-- ========== APP ========== -->
+<div id="appPage" style="display:none">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <div class="logo-icon">📦</div>
+        <div>
+          <div class="logo-text">InvenTrack</div>
+        </div>
+      </div>
+      <div class="logo-sub">IT 106 · Final Project</div>
+    </div>
+    <nav class="nav-section">
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="showView('dashboard',this)">
+        <span class="nav-icon">⊞</span>Dashboard
+      </div>
+      <div class="nav-item" id="nav-products" onclick="showView('products',this)">
+        <span class="nav-icon">📦</span>Products
+      </div>
+      <div class="nav-item" id="nav-transactions" onclick="showView('transactions',this)">
+        <span class="nav-icon">↕️</span>Transactions<span class="nav-badge" id="txnBadge" style="display:none">New</span>
+      </div>
+      <div class="nav-label" style="margin-top:8px">Alerts</div>
+      <div class="nav-item" id="nav-lowstock" onclick="showView('lowstock',this)">
+        <span class="nav-icon">⚠️</span>Low Stock<span class="nav-badge" id="lowBadge">0</span>
+      </div>
+      <div class="nav-label" style="margin-top:8px">Preferences</div>
+      <div class="nav-item" id="nav-settings" onclick="showView('settings',this)">
+        <span class="nav-icon">⚙️</span>Settings
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-av" id="sAvatar">?</div>
+        <div style="min-width:0">
+          <div class="user-name" id="sEmail">—</div>
+          <div class="user-role" id="sRole">—</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">↩ Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <header class="topbar">
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-right">
+        <div class="search-bar" id="searchWrap">
+          <span style="color:var(--text3);font-size:14px">🔍</span>
+          <input type="text" placeholder="Search name, SKU..." id="searchQ" oninput="onSearch()">
+        </div>
+        <div class="icon-btn" title="Refresh" onclick="refreshAll()">🔄</div>
+        <button class="btn btn-primary" id="addProductBtn" onclick="openProductModal('add')">＋ Add Product</button>
+      </div>
+    </header>
+
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <div class="content" id="view-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card sc-green">
+          <div class="stat-hd"><div class="stat-ico si-green">📦</div></div>
+          <div class="stat-val" id="stTotal">—</div>
+          <div class="stat-lbl">Total Products</div>
+        </div>
+        <div class="stat-card sc-blue">
+          <div class="stat-hd"><div class="stat-ico si-blue">📊</div></div>
+          <div class="stat-val" id="stTotalQty">—</div>
+          <div class="stat-lbl">Total Stock Units</div>
+        </div>
+        <div class="stat-card sc-orange">
+          <div class="stat-hd"><div class="stat-ico si-orange">⚠️</div></div>
+          <div class="stat-val" id="stLow">—</div>
+          <div class="stat-lbl">Low / Out of Stock</div>
+        </div>
+        <div class="stat-card sc-purple">
+          <div class="stat-hd"><div class="stat-ico si-purple">↕️</div></div>
+          <div class="stat-val" id="stTxns">—</div>
+          <div class="stat-lbl">Total Transactions</div>
+        </div>
+      </div>
+
+      <div class="bot-grid">
+        <!-- Low stock -->
+        <div class="card">
+          <div class="sec-hd" style="margin-bottom:10px">
+            <div><div class="sec-title">⚠️ Low Stock</div><div class="sec-sub">Items needing attention</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="showView('lowstock',document.getElementById('nav-lowstock'))">See All</button>
+          </div>
+          <div id="dashLow"></div>
+        </div>
+        <!-- Recent transactions -->
+        <div class="card">
+          <div class="sec-hd" style="margin-bottom:10px">
+            <div><div class="sec-title">↕️ Recent Transactions</div><div class="sec-sub">Latest activity</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="showView('transactions',document.getElementById('nav-transactions'))">See All</button>
+          </div>
+          <div id="dashTxns"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== PRODUCTS VIEW ===== -->
+    <div class="content" id="view-products" style="display:none">
+      <div class="sec-hd"><div><div class="sec-title">Products</div><div class="sec-sub" id="prodSub">All products</div></div></div>
+      <div class="tbl-wrap">
+        <div class="tbl-bar">
+          <div class="filters">
+            <button class="f-chip active" onclick="setProdFilter(this,'all')">All</button>
+            <button class="f-chip" onclick="setProdFilter(this,'active')">In Stock</button>
+            <button class="f-chip" onclick="setProdFilter(this,'low')">Low Stock</button>
+            <button class="f-chip" onclick="setProdFilter(this,'out')">Out of Stock</button>
+          </div>
+          <select class="sel" onchange="setProdSort(this.value)">
+            <option value="">Sort...</option>
+            <option value="name">Name A–Z</option>
+            <option value="stock_asc">Stock ↑</option>
+            <option value="stock_desc">Stock ↓</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Product</th><th>SKU</th><th>Stock</th><th>Status</th><th style="text-align:right">Actions</th>
+            </tr></thead>
+            <tbody id="prodBody"><tr class="ld-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+        <div class="tbl-foot">
+          <span id="prodInfo">—</span>
+          <div class="pg-wrap">
+            <button class="pg-arrow" id="prodPrev" onclick="prodPagePrev()">&#8592;</button>
+            <div class="pg" id="prodPg"></div>
+            <button class="pg-arrow" id="prodNext" onclick="prodPageNext()">&#8594;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TRANSACTIONS VIEW ===== -->
+    <div class="content" id="view-transactions" style="display:none">
+      <div class="sec-hd">
+        <div><div class="sec-title">Transactions</div><div class="sec-sub">All stock movements</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-bar">
+          <div class="filters">
+            <button class="f-chip active" onclick="setTxnFilter(this,'all')">All</button>
+            <button class="f-chip" onclick="setTxnFilter(this,'RESTOCK')">RESTOCK</button>
+            <button class="f-chip" onclick="setTxnFilter(this,'DISPATCH')">DISPATCH</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Product</th><th>Action</th><th>Qty Changed</th><th>By</th><th>Timestamp</th>
+            </tr></thead>
+            <tbody id="txnBody"><tr class="ld-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+        <div class="tbl-foot">
+          <span id="txnInfo">—</span>
+          <div class="pg-wrap">
+            <button class="pg-arrow" id="txnPrev" onclick="txnPagePrev()">&#8592;</button>
+            <div class="pg" id="txnPg"></div>
+            <button class="pg-arrow" id="txnNext" onclick="txnPageNext()">&#8594;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== LOW STOCK VIEW ===== -->
+    <div class="content" id="view-lowstock" style="display:none">
+      <div class="sec-hd"><div><div class="sec-title">⚠️ Low Stock Alerts</div><div class="sec-sub">Items needing attention</div></div></div>
+      <div class="tbl-wrap">
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th>Status</th><th style="text-align:right">Quick Action</th></tr></thead>
+            <tbody id="lowBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ===== SETTINGS VIEW ===== -->
+    <div class="content" id="view-settings" style="display:none">
+      <div class="sec-hd"><div><div class="sec-title">⚙️ Settings</div><div class="sec-sub">Customize your experience</div></div></div>
+
+      <div class="settings-grid">
+        <!-- Appearance -->
+        <div class="card">
+          <div class="settings-section-title">🎨 Appearance</div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <div class="settings-label">Theme</div>
+              <div class="settings-desc">Switch between dark and light mode</div>
+            </div>
+            <div class="theme-toggle-wrap">
+              <button class="theme-btn" id="themeDark" onclick="setTheme('dark')">🌙 Dark</button>
+              <button class="theme-btn" id="themeLight" onclick="setTheme('light')">☀️ Light</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account -->
+        <div class="card">
+          <div class="settings-section-title">👤 Account</div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <div class="settings-label">Logged in as</div>
+              <div class="settings-desc" id="settingsEmail">—</div>
+            </div>
+            <span class="badge b-active" id="settingsRole">—</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <div class="settings-label">Sign out</div>
+              <div class="settings-desc">End your current session</div>
+            </div>
+            <button class="btn btn-ghost" onclick="doLogout()">↩ Sign Out</button>
+          </div>
+        </div>
+
+        <!-- Inventory -->
+        <div class="card">
+          <div class="settings-section-title">📦 Inventory</div>
+          <div class="settings-row">
+            <div class="settings-info">
+              <div class="settings-label">Low stock threshold</div>
+              <div class="settings-desc">Items at or below this quantity trigger a low stock alert</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input class="fi" id="thresholdInput" type="number" min="1" max="100" value="10" style="width:70px;text-align:center">
+              <button class="btn btn-primary btn-sm" onclick="saveThreshold()">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ======= PRODUCT MODAL ======= -->
+<div class="mo" id="productModal">
+  <div class="mo-box">
+    <div class="mo-hd">
+      <div><div class="mo-title" id="pmTitle">Add Product</div><div class="mo-sub">Fill in the product details below</div></div>
+      <div class="mo-x" onclick="closePM()">✕</div>
+    </div>
+    <div class="mo-body">
+      <div class="fg-grid">
+        <div class="fg" style="grid-column:1/-1">
+          <label class="fl">name *</label>
+          <input class="fi" id="pName" placeholder="e.g. Wireless Keyboard">
+        </div>
+        <div class="fg">
+          <label class="fl">sku * <span style="color:var(--text3)">(unique)</span></label>
+          <input class="fi" id="pSku" placeholder="e.g. WK-001">
+        </div>
+        <div class="fg">
+          <label class="fl">Initial Stock *</label>
+          <input class="fi" id="pQty" type="number" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+    <div class="mo-foot">
+      <button class="btn btn-ghost" onclick="closePM()">Cancel</button>
+      <button class="btn btn-primary" id="pmSaveBtn" onclick="saveProduct()">💾 Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= STOCK MOVEMENT MODAL ======= -->
+<div class="mo" id="stockModal">
+  <div class="mo-box">
+    <div class="mo-hd">
+      <div>
+        <div class="mo-title" id="smTitle">Stock Movement</div>
+        <div class="mo-sub">Choose an action and enter quantity</div>
+      </div>
+      <div class="mo-x" onclick="closeSM()">✕</div>
+    </div>
+    <div class="mo-body">
+
+      <!-- Product info -->
+      <div class="mv-product" id="smProduct"></div>
+      <!-- Type toggle -->
+      <div class="type-toggle">
+        <button class="type-btn active-restock" id="typeRestock" onclick="setMvType('RESTOCK')">📥 RESTOCK (add stock)</button>
+        <button class="type-btn" id="typeDispatch" onclick="setMvType('DISPATCH')">📤 DISPATCH (remove stock)</button>
+      </div>
+      <div class="fg">
+        <label class="fl">Qty Changed *</label>
+        <input class="fi" id="smQty" type="number" placeholder="Enter quantity" min="1">
+        <div class="fi-note" id="smNote"></div>
+      </div>
+    </div>
+    <div class="mo-foot">
+      <button class="btn btn-ghost" onclick="closeSM()">Cancel</button>
+      <button class="btn btn-primary" id="smSaveBtn" onclick="saveMovement()">✅ Confirm & Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= DELETE MODAL ======= -->
+<div class="mo" id="deleteModal">
+  <div class="mo-box" style="width:390px">
+    <div class="mo-hd">
+      <div><div class="mo-title">🗑️ Delete Product</div><div class="mo-sub">This action cannot be undone</div></div>
+      <div class="mo-x" onclick="closeDel()">✕</div>
+    </div>
+    <div class="mo-body">
+      <p style="font-size:14px;color:var(--text2);line-height:1.7">Delete <strong id="delName" style="color:var(--text)"></strong>? This will permanently remove the product and all its stock history.</p>
+    </div>
+    <div class="mo-foot">
+      <button class="btn btn-ghost" onclick="closeDel()">Cancel</button>
+      <button class="btn btn-danger" id="delConfirmBtn" onclick="confirmDelete()">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="tc" id="tc"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
